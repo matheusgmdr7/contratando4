@@ -12,19 +12,20 @@ interface SuccessModalProps {
   isOpen: boolean
   onClose: () => void
   data: {
-    propostaId: string
-    nomeCliente: string
-    emailCliente: string
-    whatsappCliente: string
-    valorProposta: number
-    emailEnviado: boolean
+    clienteNome: string
+    clienteEmail: string
     linkProposta: string
-    nomeCorretor: string
-  }
+    emailEnviado: boolean
+  } | null
 }
 
-export default function SuccessModal({ isOpen, onClose, data }: SuccessModalProps) {
+function SuccessModal({ isOpen, onClose, data }: SuccessModalProps) {
   const [copied, setCopied] = useState(false)
+
+  // Early return if no data
+  if (!data) {
+    return null
+  }
 
   console.log("Modal - Dados recebidos:", data)
   console.log("Modal - Email enviado:", data.emailEnviado, typeof data.emailEnviado)
@@ -42,8 +43,9 @@ export default function SuccessModal({ isOpen, onClose, data }: SuccessModalProp
   }
 
   const openWhatsApp = () => {
-    const message = `Olá ${data.nomeCliente}! Sua proposta de plano de saúde foi criada com sucesso. Para finalizar o processo, acesse o link: ${data.linkProposta}`
-    const whatsappUrl = `https://wa.me/${data.whatsappCliente.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`
+    const message = `Olá ${data.clienteNome}! Sua proposta de plano de saúde foi criada com sucesso. Para finalizar o processo, acesse o link: ${data.linkProposta}`
+    // Extract phone number from email or use a default message
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, "_blank")
   }
 
@@ -85,8 +87,8 @@ export default function SuccessModal({ isOpen, onClose, data }: SuccessModalProp
                   </h3>
                   <p className={`text-sm mt-1 ${emailStatus ? "text-green-700" : "text-orange-700"}`}>
                     {emailStatus
-                      ? `Link da proposta enviado para ${data.emailCliente}`
-                      : `Você precisará enviar o link manualmente para ${data.emailCliente}`}
+                      ? `Link da proposta enviado para ${data.clienteEmail}`
+                      : `Você precisará enviar o link manualmente para ${data.clienteEmail}`}
                   </p>
                   {!emailStatus && (
                     <p className="text-xs text-orange-600 mt-2">
@@ -99,47 +101,20 @@ export default function SuccessModal({ isOpen, onClose, data }: SuccessModalProp
           </Card>
 
           {/* Informações da Proposta */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardContent className="pt-4">
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Cliente</p>
-                    <p className="font-semibold">{data.nomeCliente}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Email</p>
-                    <p className="text-sm">{data.emailCliente}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">WhatsApp</p>
-                    <p className="text-sm">{data.whatsappCliente}</p>
-                  </div>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Cliente</p>
+                  <p className="font-semibold">{data.clienteNome}</p>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-4">
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">ID da Proposta</p>
-                    <p className="font-mono text-sm">{data.propostaId}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Valor</p>
-                    <p className="text-lg font-bold text-green-600">
-                      R$ {data.valorProposta.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Corretor</p>
-                    <p className="text-sm">{data.nomeCorretor}</p>
-                  </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Email</p>
+                  <p className="text-sm">{data.clienteEmail}</p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <Separator />
 
@@ -189,3 +164,9 @@ export default function SuccessModal({ isOpen, onClose, data }: SuccessModalProp
     </Dialog>
   )
 }
+
+// Default export
+export default SuccessModal
+
+// Named export for compatibility
+export { SuccessModal }
