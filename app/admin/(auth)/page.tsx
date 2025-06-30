@@ -8,6 +8,10 @@ import Link from "next/link"
 import { buscarLeads } from "@/services/leads-service"
 import { buscarPropostas } from "@/services/propostas-service-unificado"
 import { buscarCorretores } from "@/services/corretores-service"
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend } from 'chart.js'
+import { Line } from 'react-chartjs-2'
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend)
 
 export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true)
@@ -16,6 +20,92 @@ export default function AdminDashboard() {
   const [propostasAprovadas, setPropostasAprovadas] = useState(0)
   const [corretoresAtivos, setCorretoresAtivos] = useState(0)
   const [corretores, setCorretores] = useState<any[]>([])
+  const [dadosGrafico, setDadosGrafico] = useState<any>(null)
+
+  // Função para gerar dados do gráfico dos últimos 6 meses
+  const gerarDadosGrafico = (leads: any[], propostas: any[]) => {
+    const meses = []
+    const dadosLeads = []
+    const dadosPropostas = []
+    const dadosAprovadas = []
+    
+    // Gerar últimos 6 meses
+    for (let i = 5; i >= 0; i--) {
+      const data = new Date()
+      data.setMonth(data.getMonth() - i)
+      const mesAno = data.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+      meses.push(mesAno)
+      
+      const inicioMes = new Date(data.getFullYear(), data.getMonth(), 1)
+      const fimMes = new Date(data.getFullYear(), data.getMonth() + 1, 0, 23, 59, 59, 999)
+      
+      // Contar leads do mês
+      const leadsMes = leads.filter(lead => {
+        const dataLead = new Date(lead.created_at || lead.data)
+        return dataLead >= inicioMes && dataLead <= fimMes
+      }).length
+      dadosLeads.push(leadsMes)
+      
+      // Contar propostas do mês
+      const propostasMes = propostas.filter(proposta => {
+        const dataProposta = new Date(proposta.created_at || proposta.data)
+        return dataProposta >= inicioMes && dataProposta <= fimMes
+      }).length
+      dadosPropostas.push(propostasMes)
+      
+      // Contar propostas aprovadas do mês
+      const aprovadasMes = propostas.filter(proposta => {
+        const dataProposta = new Date(proposta.created_at || proposta.data)
+        return dataProposta >= inicioMes && dataProposta <= fimMes && proposta.status === 'aprovada'
+      }).length
+      dadosAprovadas.push(aprovadasMes)
+    }
+    
+    return {
+      labels: meses,
+      datasets: [
+        {
+          label: 'Leads Recebidos',
+          data: dadosLeads,
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderColor: 'rgba(59, 130, 246, 1)',
+          borderWidth: 3,
+          tension: 0.4,
+          fill: false,
+          pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+        },
+        {
+          label: 'Propostas Recebidas',
+          data: dadosPropostas,
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          borderColor: 'rgba(34, 197, 94, 1)',
+          borderWidth: 3,
+          tension: 0.4,
+          fill: false,
+          pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+        },
+        {
+          label: 'Propostas Aprovadas',
+          data: dadosAprovadas,
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          borderColor: 'rgba(16, 185, 129, 1)',
+          borderWidth: 3,
+          tension: 0.4,
+          fill: false,
+          pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+        },
+      ],
+    }
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,6 +129,10 @@ export default function AdminDashboard() {
         const ativos = corretoresData.filter((c: any) => c.status === "aprovado").length
         setCorretoresAtivos(ativos)
         setCorretores(corretoresData)
+
+        // Gerar dados do gráfico
+        const dadosGraficoProcessados = gerarDadosGrafico(leads, propostasCorretores)
+        setDadosGrafico(dadosGraficoProcessados)
       } catch (error) {
         console.error("Error fetching data:", error)
         // Definindo valores padrão em caso de erro
@@ -112,17 +206,44 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Atividade Recente</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Desempenho dos Últimos 6 Meses</h3>
             <Link href="/admin/propostas" className="text-sm text-gray-600 hover:text-gray-800 font-medium">
               Ver todas →
             </Link>
           </div>
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-            <div className="text-center">
-              <BarChart3 className="h-16 w-16 text-blue-400 mx-auto mb-4" />
-              <p className="text-gray-500 font-medium">Gráfico de atividades</p>
-              <p className="text-sm text-gray-400 mt-1">Dados serão exibidos aqui</p>
-            </div>
+          <div className="h-64">
+            {dadosGrafico ? (
+              <Line
+                data={dadosGrafico}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'top' as const,
+                    },
+                    title: {
+                      display: false,
+                    },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      ticks: {
+                        stepSize: 1,
+                      },
+                    },
+                  },
+                }}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                <div className="text-center">
+                  <BarChart3 className="h-16 w-16 text-blue-400 mx-auto mb-4" />
+                  <p className="text-gray-500 font-medium">Carregando dados do gráfico...</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
