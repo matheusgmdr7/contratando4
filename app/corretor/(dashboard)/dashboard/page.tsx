@@ -37,7 +37,7 @@ export default function CorretorDashboardPage() {
   const [ultimasPropostas, setUltimasPropostas] = useState<any[]>([])
   const [ultimasComissoes, setUltimasComissoes] = useState<any[]>([])
   const [mesSelecionado, setMesSelecionado] = useState<string>(new Date().toISOString().substring(0, 7)) // Formato YYYY-MM
-  const [periodoSelecionado, setPeriodoSelecionado] = useState<string>("mes-atual")
+  const [periodoSelecionado, setPeriodoSelecionado] = useState<string>("todos")
   const [tentativasRecarregar, setTentativasRecarregar] = useState(0)
   const [statusSupabase, setStatusSupabase] = useState<boolean | null>(null)
   const [verificandoSupabase, setVerificandoSupabase] = useState(false)
@@ -45,20 +45,48 @@ export default function CorretorDashboardPage() {
   // Função para obter o primeiro e último dia do mês
   const obterPrimeiroDiaDoMes = (dataStr: string) => {
     const [ano, mes] = dataStr.split("-")
-    return new Date(Number.parseInt(ano), Number.parseInt(mes) - 1, 1)
+    return new Date(Number.parseInt(ano), Number.parseInt(mes) - 1, 1, 0, 0, 0, 0)
   }
 
   const obterUltimoDiaDoMes = (dataStr: string) => {
     const [ano, mes] = dataStr.split("-")
-    return new Date(Number.parseInt(ano), Number.parseInt(mes), 0)
+    return new Date(Number.parseInt(ano), Number.parseInt(mes), 0, 23, 59, 59, 999)
   }
 
   // Função para filtrar dados por período
   const filtrarPorPeriodo = (dados: any[], dataInicio: Date, dataFim: Date) => {
-    return dados.filter((item) => {
-      const dataItem = new Date(item.created_at || item.data)
-      return dataItem >= dataInicio && dataItem <= dataFim
+    console.log("🔍 Filtrando dados por período:")
+    console.log("📅 Data início:", dataInicio.toISOString())
+    console.log("📅 Data fim:", dataFim.toISOString())
+    console.log("📊 Total de dados antes do filtro:", dados.length)
+    
+    const dadosFiltrados = dados.filter((item) => {
+      try {
+        const dataItem = new Date(item.created_at || item.data)
+        
+        // Verificar se a data é válida
+        if (isNaN(dataItem.getTime())) {
+          console.log(`⚠️ Data inválida para item ${item.id}:`, item.created_at || item.data)
+          return false
+        }
+        
+        const estaNoPeriodo = dataItem >= dataInicio && dataItem <= dataFim
+        
+        if (!estaNoPeriodo) {
+          console.log(`❌ Item ${item.id} fora do período:`, dataItem.toISOString(), "não está entre", dataInicio.toISOString(), "e", dataFim.toISOString())
+        } else {
+          console.log(`✅ Item ${item.id} dentro do período:`, dataItem.toISOString())
+        }
+        
+        return estaNoPeriodo
+      } catch (error) {
+        console.error(`❌ Erro ao processar data do item ${item.id}:`, error)
+        return false
+      }
     })
+    
+    console.log("📊 Total de dados após filtro:", dadosFiltrados.length)
+    return dadosFiltrados
   }
 
   // Verificar conexão com Supabase
@@ -105,11 +133,13 @@ export default function CorretorDashboardPage() {
           return
         }
 
-        console.log("ID do corretor autenticado:", corretor.id)
+        console.log("🔐 Corretor autenticado:", corretor)
+        console.log("🆔 ID do corretor autenticado:", corretor.id)
 
         // Buscar propostas do corretor
         const propostas = await buscarPropostasPorCorretor(corretor.id)
         console.log("📊 Propostas carregadas:", propostas.length)
+        console.log("📋 Detalhes das propostas:", propostas.map(p => ({ id: p.id, status: p.status, created_at: p.created_at })))
 
         // Buscar comissões do corretor
         const comissoes = await buscarComissoesPorCorretor(corretor.id)
@@ -119,8 +149,8 @@ export default function CorretorDashboardPage() {
 
         if (periodoSelecionado === "mes-atual") {
           const hoje = new Date()
-          dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
-          dataFim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0)
+          dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1, 0, 0, 0, 0)
+          dataFim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0, 23, 59, 59, 999)
         } else if (periodoSelecionado === "mes-especifico") {
           dataInicio = obterPrimeiroDiaDoMes(mesSelecionado)
           dataFim = obterUltimoDiaDoMes(mesSelecionado)
@@ -282,7 +312,7 @@ export default function CorretorDashboardPage() {
         <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
 
         <div className="flex items-center space-x-2">
-          <Tabs defaultValue="mes-atual" className="w-[400px]" onValueChange={setPeriodoSelecionado}>
+          <Tabs defaultValue="todos" className="w-[400px]" onValueChange={setPeriodoSelecionado}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="mes-atual">Mês Atual</TabsTrigger>
               <TabsTrigger value="mes-especifico">Mês Específico</TabsTrigger>
