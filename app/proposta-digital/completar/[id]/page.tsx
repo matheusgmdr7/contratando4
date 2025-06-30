@@ -82,6 +82,10 @@ export default function CompletarPropostaPage() {
   const [isFinalizando, setIsFinalizando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [etapaAtual, setEtapaAtual] = useState(1)
+  const [formData, setFormData] = useState<any>({
+    assinatura_imagem: "",
+    declaracao_veracidade: false,
+  })
 
   const methods = useForm({
     defaultValues: {
@@ -230,21 +234,21 @@ export default function CompletarPropostaPage() {
         .then((data) => data.ip)
         .catch(() => "Não disponível")
 
-      const assinatura = methods.getValues("assinatura")
+      const assinatura = formData.assinatura_imagem
 
       if (!assinatura) {
         toast.error("Assinatura é obrigatória para finalizar a proposta")
         return
       }
 
-      // CORRIGIDO: Usar valores válidos para status_assinatura
       const { error: updateError } = await supabase
         .from("propostas")
         .update({
           status: "finalizada",
-          status_assinatura: "pendente", // CORRIGIDO: usar "pendente" em vez de "assinada"
+          status_assinatura: "assinada",
           assinado_em: new Date().toISOString(),
           assinatura: assinatura,
+          assinatura_imagem: assinatura,
           ip_assinatura: ipAddress,
           user_agent: userAgent,
         })
@@ -285,11 +289,24 @@ export default function CompletarPropostaPage() {
     }
   }
 
+  // Função para atualizar formData
+  const updateFormData = (data: any) => {
+    setFormData((prev: any) => ({ ...prev, ...data }))
+  }
+
   useEffect(() => {
-    if (propostaId) {
-      carregarProposta()
-    }
+    carregarProposta()
   }, [propostaId])
+
+  // Atualizar formData quando proposta for carregada
+  useEffect(() => {
+    if (proposta) {
+      setFormData({
+        assinatura_imagem: proposta.assinatura_imagem || "",
+        declaracao_veracidade: proposta.status_assinatura === "assinada",
+      })
+    }
+  }, [proposta])
 
   if (isLoading) {
     return (
@@ -554,7 +571,12 @@ export default function CompletarPropostaPage() {
           {/* Etapa 5: Assinatura Digital */}
           {etapaAtual === 5 && (
             <div className="space-y-6">
-              <Step7Signature />
+              <Step7Signature 
+                onNext={proximaEtapa}
+                onPrev={etapaAnterior}
+                formData={formData}
+                updateFormData={updateFormData}
+              />
 
               {/* Finalização */}
               <Card>
