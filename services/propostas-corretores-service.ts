@@ -1,12 +1,11 @@
 import { supabase } from "@/lib/supabase"
-import type { PropostaCorretor } from "@/types/corretores"
 
 /**
  * Busca todas as propostas de um corretor específico
  * @param corretorId ID do corretor
  * @returns Array de propostas do corretor
  */
-export async function buscarPropostasPorCorretor(corretorId: string): Promise<PropostaCorretor[]> {
+export async function buscarPropostasPorCorretor(corretorId: string): Promise<any[]> {
   try {
     // Verificar se estamos em ambiente de desenvolvimento com corretor fictício
     if (
@@ -19,13 +18,22 @@ export async function buscarPropostasPorCorretor(corretorId: string): Promise<Pr
       return gerarPropostasFicticias()
     }
 
-    // Buscar propostas do corretor no banco de dados
+    // Buscar propostas do corretor na tabela unificada 'propostas'
     const { data, error } = await supabase
-      .from("propostas_corretores")
+      .from("propostas")
       .select(`
-        *,
-        corretores (*),
-        documentos_propostas_corretores (*)
+        id,
+        corretor_id,
+        corretor_nome,
+        nome_titular,
+        email_titular,
+        whatsapp_titular,
+        plano_nome,
+        status,
+        valor_proposta,
+        data,
+        created_at,
+        operadora_nome
       `)
       .eq("corretor_id", corretorId)
       .order("created_at", { ascending: false })
@@ -35,7 +43,26 @@ export async function buscarPropostasPorCorretor(corretorId: string): Promise<Pr
       throw new Error(`Erro ao buscar propostas: ${error.message}`)
     }
 
-    return data || []
+    // Transformar os dados para o formato esperado pelo dashboard
+    const propostasFormatadas = (data || []).map(proposta => ({
+      id: proposta.id,
+      corretor_id: proposta.corretor_id,
+      corretor_nome: proposta.corretor_nome,
+      cliente: proposta.nome_titular,
+      email_cliente: proposta.email_titular,
+      whatsapp_cliente: proposta.whatsapp_titular,
+      produto: proposta.plano_nome,
+      status: proposta.status,
+      valor: proposta.valor_proposta,
+      data: proposta.data,
+      created_at: proposta.created_at,
+      produto_nome: proposta.operadora_nome,
+      plano_nome: proposta.plano_nome,
+      valor_proposta: proposta.valor_proposta,
+      comissao: Math.floor(proposta.valor_proposta * 0.1), // Calcular comissão (10% do valor)
+    }))
+
+    return propostasFormatadas
   } catch (error) {
     console.error("Erro ao buscar propostas do corretor:", error)
 
@@ -53,7 +80,7 @@ export async function buscarPropostasPorCorretor(corretorId: string): Promise<Pr
  * Gera propostas fictícias para desenvolvimento
  * @returns Array de propostas fictícias
  */
-function gerarPropostasFicticias(): PropostaCorretor[] {
+function gerarPropostasFicticias(): any[] {
   const statusOptions = ["pendente", "aprovada", "rejeitada"]
   const produtos = ["Plano de Saúde Individual", "Plano Familiar", "Plano Empresarial", "Plano Odontológico"]
 
@@ -80,7 +107,7 @@ function gerarPropostasFicticias(): PropostaCorretor[] {
  * @param propostaId ID da proposta
  * @returns Dados da proposta ou null se não encontrada
  */
-export async function buscarPropostaPorId(propostaId: string): Promise<PropostaCorretor | null> {
+export async function buscarPropostaPorId(propostaId: string): Promise<any | null> {
   try {
     // Verificar se estamos em ambiente de desenvolvimento com ID fictício
     if (
@@ -96,11 +123,20 @@ export async function buscarPropostaPorId(propostaId: string): Promise<PropostaC
     }
 
     const { data, error } = await supabase
-      .from("propostas_corretores")
+      .from("propostas")
       .select(`
-        *,
-        corretores (*),
-        documentos_propostas_corretores (*)
+        id,
+        corretor_id,
+        corretor_nome,
+        nome_titular,
+        email_titular,
+        whatsapp_titular,
+        plano_nome,
+        status,
+        valor_proposta,
+        data,
+        created_at,
+        operadora_nome
       `)
       .eq("id", propostaId)
       .single()
@@ -108,6 +144,27 @@ export async function buscarPropostaPorId(propostaId: string): Promise<PropostaC
     if (error) {
       console.error("Erro ao buscar proposta por ID:", error)
       return null
+    }
+
+    // Transformar os dados para o formato esperado
+    if (data) {
+      return {
+        id: data.id,
+        corretor_id: data.corretor_id,
+        corretor_nome: data.corretor_nome,
+        cliente: data.nome_titular,
+        email_cliente: data.email_titular,
+        whatsapp_cliente: data.whatsapp_titular,
+        produto: data.plano_nome,
+        status: data.status,
+        valor: data.valor_proposta,
+        data: data.data,
+        created_at: data.created_at,
+        produto_nome: data.operadora_nome,
+        plano_nome: data.plano_nome,
+        valor_proposta: data.valor_proposta,
+        comissao: Math.floor(data.valor_proposta * 0.1),
+      }
     }
 
     return data
@@ -122,7 +179,7 @@ export async function buscarPropostaPorId(propostaId: string): Promise<PropostaC
  * @param propostaData Dados da proposta a ser criada
  * @returns Dados da proposta criada
  */
-export async function criarProposta(propostaData: Partial<PropostaCorretor>): Promise<PropostaCorretor> {
+export async function criarProposta(propostaData: Partial<any>): Promise<any> {
   try {
     const { data, error } = await supabase.from("propostas_corretores").insert([propostaData]).select().single()
 
@@ -146,8 +203,8 @@ export async function criarProposta(propostaData: Partial<PropostaCorretor>): Pr
  */
 export async function atualizarProposta(
   propostaId: string,
-  propostaData: Partial<PropostaCorretor>,
-): Promise<PropostaCorretor> {
+  propostaData: Partial<any>,
+): Promise<any> {
   try {
     const { data, error } = await supabase
       .from("propostas_corretores")
@@ -193,7 +250,7 @@ export async function excluirProposta(propostaId: string): Promise<boolean> {
  * Busca todas as propostas de corretores para o painel administrativo
  * @returns Array de todas as propostas de corretores
  */
-export async function buscarPropostasCorretores(): Promise<PropostaCorretor[]> {
+export async function buscarPropostasCorretores(): Promise<any[]> {
   try {
     // Verificar se estamos em ambiente de desenvolvimento
     if (process.env.NODE_ENV === "development" || window.location.hostname === "localhost") {
