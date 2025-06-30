@@ -244,7 +244,7 @@ export default function CompletarPropostaPage() {
       const { error: updateError } = await supabase
         .from("propostas")
         .update({
-          status: "finalizada",
+          status: "pendente",
           status_assinatura: "assinada",
           assinado_em: new Date().toISOString(),
           assinatura: assinatura,
