@@ -129,8 +129,7 @@ export default function PropostaWizard({ corretor }: PropostaWizardProps) {
       // Preparar dados para criação da proposta
       const dadosProposta = {
         ...formData,
-        corretor_id: corretor?.id || 0,
-        corretor_nome: corretor?.nome || "Sistema",
+        ...(corretor?.id ? { corretor_id: corretor.id, corretor_nome: corretor.nome } : {}),
         status: "parcial",
         data: new Date().toISOString(),
       }
