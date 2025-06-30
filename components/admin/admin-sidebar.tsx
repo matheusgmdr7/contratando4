@@ -204,6 +204,20 @@ export default function AdminSidebar() {
               </li>
               <li>
                 <Link
+                  href="/admin/clientes-ativos"
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-white",
+                    isActive("/admin/clientes-ativos") ? "bg-[#13786a] text-white" : "text-white/80 hover:bg-white/10",
+                  )}
+                  onClick={closeSidebar}
+                  title={isCollapsed ? "Clientes Ativos" : ""}
+                >
+                  <Users className="h-4 w-4 flex-shrink-0" />
+                  {!isCollapsed && <span>Clientes Ativos</span>}
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/admin/tabelas"
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-white",
