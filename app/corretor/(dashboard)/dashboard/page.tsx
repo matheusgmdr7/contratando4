@@ -109,6 +109,7 @@ export default function CorretorDashboardPage() {
 
         // Buscar propostas do corretor
         const propostas = await buscarPropostasPorCorretor(corretor.id)
+        console.log("📊 Propostas carregadas:", propostas.length)
 
         // Buscar comissões do corretor
         const comissoes = await buscarComissoesPorCorretor(corretor.id)
@@ -129,12 +130,15 @@ export default function CorretorDashboardPage() {
           dataFim = new Date(8640000000000000) // Data máxima
         }
 
-        // Filtrar dados pelo período selecionado
-        const propostasFiltradas =
-          periodoSelecionado === "todos" ? propostas : filtrarPorPeriodo(propostas, dataInicio, dataFim)
+        console.log("📅 Período selecionado:", periodoSelecionado)
+        console.log("📅 Data início:", dataInicio)
+        console.log("📅 Data fim:", dataFim)
 
-        const comissoesFiltradas =
-          periodoSelecionado === "todos" ? comissoes : filtrarPorPeriodo(comissoes, dataInicio, dataFim)
+        // Filtrar dados pelo período selecionado
+        const propostasFiltradas = filtrarPorPeriodo(propostas, dataInicio, dataFim)
+        console.log("📊 Propostas filtradas:", propostasFiltradas.length)
+
+        const comissoesFiltradas = filtrarPorPeriodo(comissoes, dataInicio, dataFim)
 
         // Calcular resumo das comissões
         const comissoesTotais = comissoesFiltradas.reduce((acc, comissao) => acc + Number(comissao.valor || 0), 0)
@@ -148,6 +152,9 @@ export default function CorretorDashboardPage() {
         // Calcular estatísticas com base nas propostas
         const propostasEnviadas = propostasFiltradas.length
         const propostasAprovadas = propostasFiltradas.filter((p) => p.status === "aprovada").length
+
+        console.log("📊 Propostas enviadas:", propostasEnviadas)
+        console.log("📊 Propostas aprovadas:", propostasAprovadas)
 
         // Calcular clientes únicos (baseado no email)
         const clientesUnicos = new Set()
