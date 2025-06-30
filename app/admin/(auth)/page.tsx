@@ -6,7 +6,7 @@ import StatCard from "@/components/admin/stat-card"
 import { Users, FileText, Package, DollarSign, BarChart3, TrendingUp, Clock, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { buscarLeads } from "@/services/leads-service"
-import { buscarPropostasCorretores } from "@/services/propostas-service"
+import { buscarPropostas } from "@/services/propostas-service-unificado"
 import { buscarCorretores } from "@/services/corretores-service"
 
 export default function AdminDashboard() {
@@ -15,7 +15,7 @@ export default function AdminDashboard() {
   const [propostasRecebidas, setPropostasRecebidas] = useState(0)
   const [propostasAprovadas, setPropostasAprovadas] = useState(0)
   const [corretoresAtivos, setCorretoresAtivos] = useState(0)
-  const [corretores, setCorretores] = useState([])
+  const [corretores, setCorretores] = useState<any[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -26,7 +26,7 @@ export default function AdminDashboard() {
         setLeadsRecebidos(leads.length)
 
         // Fetch Propostas de Corretores
-        const propostasCorretores = await buscarPropostasCorretores()
+        const propostasCorretores = await buscarPropostas()
         setPropostasRecebidas(propostasCorretores.length)
 
         // Filtra propostas aprovadas
@@ -36,7 +36,7 @@ export default function AdminDashboard() {
         // Fetch Corretores
         const corretoresData = await buscarCorretores()
         // Verificando se o campo status existe antes de filtrar
-        const ativos = corretoresData.filter((c) => c.status === "aprovado").length
+        const ativos = corretoresData.filter((c: any) => c.status === "aprovado").length
         setCorretoresAtivos(ativos)
         setCorretores(corretoresData)
       } catch (error) {
@@ -134,7 +134,7 @@ export default function AdminDashboard() {
             </Link>
           </div>
           <div className="space-y-4">
-            {corretores.slice(0, 5).map((corretor) => (
+            {corretores.slice(0, 5).map((corretor: any) => (
               <div
                 key={corretor.id}
                 className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
