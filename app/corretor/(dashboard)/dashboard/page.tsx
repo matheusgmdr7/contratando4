@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileText, TrendingUp, Users, CheckCircle, AlertCircle, RefreshCw } from "lucide-react"
-import { buscarPropostasPorCorretor } from "@/services/propostas-corretores-service"
+import { buscarPropostasPorCorretor } from "@/services/propostas-service-unificado"
 import { getCorretorLogado } from "@/services/auth-corretores-simples"
 import { buscarComissoesPorCorretor } from "@/services/comissoes-service"
 import { formatarMoeda } from "@/utils/formatters"
@@ -301,7 +301,7 @@ export default function CorretorDashboardPage() {
 
       {carregando ? (
         <div className="flex justify-center items-center h-64">
-          <Spinner size="lg" />
+          <Spinner />
           <span className="ml-2 text-gray-600">Carregando dados...</span>
         </div>
       ) : (
