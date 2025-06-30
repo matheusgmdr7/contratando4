@@ -45,7 +45,7 @@ export default function Step7Signature({ onNext, onPrev, formData, updateFormDat
     ctx.fillRect(0, 0, canvas.width, canvas.height)
 
     // Carregar assinatura existente se houver
-    if (formData.assinatura_imagem) {
+    if (formData && formData.assinatura_imagem) {
       const img = new Image()
       img.onload = () => {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
@@ -54,10 +54,10 @@ export default function Step7Signature({ onNext, onPrev, formData, updateFormDat
       img.src = formData.assinatura_imagem
     }
 
-    if (formData.declaracao_veracidade) {
+    if (formData && formData.declaracao_veracidade) {
       setDeclaracaoAceita(true)
     }
-  }, [formData.assinatura_imagem, formData.declaracao_veracidade])
+  }, [formData?.assinatura_imagem, formData?.declaracao_veracidade])
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
