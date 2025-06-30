@@ -380,6 +380,21 @@ export async function criarProposta(dadosProposta: any): Promise<string | null> 
     console.log("🚀 Criando nova proposta na tabela unificada...")
     console.log("📋 Dados recebidos:", dadosProposta)
 
+    // GARANTIR QUE O NOME DO CORRETOR SERÁ SALVO
+    if (dadosProposta.corretor_id && !dadosProposta.corretor_nome) {
+      const { data: corretor, error } = await supabase
+        .from("corretores")
+        .select("nome")
+        .eq("id", dadosProposta.corretor_id)
+        .single()
+      if (corretor && corretor.nome) {
+        dadosProposta.corretor_nome = corretor.nome
+        console.log("✅ Nome do corretor preenchido automaticamente:", corretor.nome)
+      } else {
+        console.warn("⚠️ Não foi possível preencher o nome do corretor automaticamente.")
+      }
+    }
+
     // VALIDAR E FORMATAR CPF DO TITULAR
     if (dadosProposta.cpf) {
       const cpfLimpo = removerFormatacaoCPF(dadosProposta.cpf)
